@@ -1,0 +1,63 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>房間-<%= roomID %></title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/all.css">
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    </head>
+    <body>
+        <!--網頁主外觀-->
+        <nav class="navbar navbar-expand-md navbar-dark bg-dark">
+            <span class="navbar-brand" href="#"><div id="roomID"></div></span><div id="userDisplay"></div><a class="navbar-brand btn btn-success" href="/gameRoom/">回到大廳</a>
+        </nav>
+        <hr>
+        <div class="container-fluid">
+            <div class="card">
+                <div class="card-body scroll" id="msgLog">
+                </div>
+            </div>
+        </div>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            var userName = '';
+            
+            //init
+            jQuery(document).ready(function($) {
+                userName = sessionStorage.getItem('user');
+                var url = decodeURIComponent(window.location.href);
+                var spilted = url.split('/');
+                var roomID = spilted[spilted.length - 1];
+                $('#roomID').html('<span class="navbar-brand order-md-last">房間: ' + roomID + '</span>');
+                $('#userDisplay').html('<span class="navbar-brand order-md-last">目前暱稱: ' + userName + '</span>');
+            });
+            
+            //SOCKET
+            var socket = io.connect();
+            //使用者加入房間告知後端
+            socket.on('connect', function() {
+                socket.emit('join', userName);
+            });
+            
+            //接收後端訊息
+            socket.on('system', function(sysMsg, users) {
+                var msg = '後端通知: '+sysMsg+'<br>';
+                $('#msgLog').append(msg);
+                console.log('後端通知: '+sysMsg);
+                console.log('在此房間的使用者數量: '+users.length);
+            });
+            
+            //房間已滿
+            socket.on('roomFull', function() {
+                if(!alert('房間已滿，將退回大廳')) {
+                    document.location.href = '/gameRoom/';
+                }
+            });
+            
+        </script>
+    </body>
+</html>

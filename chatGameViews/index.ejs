@@ -1,0 +1,193 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>大廳</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/all.css">
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <style>
+            .scroll {
+                max-height: 350px;
+                overflow-y : scroll;
+            }
+        </style>
+    </head>
+    <body>
+        <!--暱稱設定彈出視窗-->
+        <div class="modal fade" tabindex="-1" role="dialog" id="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">設定暱稱</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" class="form-control" id="userID">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="saveUID();">確定</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">不設定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--建立新房間表單-->
+        <div class="modal fade" tabindex="-1" role="dialog" id="newRoomDialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">建立新房間</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" class="form-control" id="newRoomID">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="newRoom();">確定</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--網頁主外觀-->
+        <nav class="navbar navbar-expand-md navbar-dark bg-dark">
+            <span class="navbar-brand" href="#">大廳 GameRoom</span><div id="userDisplay"></div><button class="navbar-brand navbar-right btn btn-success" onclick="changeNameDialogOpen();">更改暱稱</button>
+        </nav>
+        <div class="container-fluid">
+            <p style="margin-top: 10px;">即時聊天室</p>
+            <div class="card">
+                <div class="card-body scroll" id="cardBody">
+                </div>
+            </div>
+            <div class="form-group shadow-textarea">
+                <label>輸入想說的話: </label>
+                <div class="input-group-append">
+                    <textarea style="resize:none;" class="form-control z-depth-1" id="lobbyChat" rows="3" placeholder=""></textarea>
+                    <button class="input-group-text btn btn-primary" onclick="sendMsg();">傳送</button>
+                </div>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <div class="container-fluid">
+            <span class="form-group">房間列表&nbsp;<button class="btn btn-primary" onclick="newRoomDialogOpen();">新增房間</button></span>
+            <ul class="list-group" style="margin-top: 10px;">
+                <div id="roomList"></div>
+            </ul>
+        </div>
+        
+        <hr>
+        
+        <div class="container-fluid">
+            <div class="card scroll">
+                <div class="card-body" id="msgLog">
+                </div>
+            </div>
+        </div>
+        
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            var userName = 'anonymous';
+            
+            //init
+            jQuery(document).ready(function($) {
+                if(sessionStorage.getItem('user') !== null) {
+                    userName = sessionStorage.getItem('user');
+                    $('#userDisplay').html('<span class="navbar-brand order-md-last">目前暱稱: ' + userName + '</span>');
+                }
+                if(userName === 'anonymous') {
+                    changeNameDialogOpen();
+                }
+            });
+            
+            //socket
+            var socket = io.connect();
+            
+            
+            //使用者加入房間告知後端
+            socket.on('connect', function() {
+                socket.emit('join', userName);
+            });
+            
+            //接收房間列表
+            socket.on('rooms', function(roomInfo) {
+                console.log('rooms:---'+roomInfo);
+                $('#roomList').empty();
+                for(var roomID in roomInfo){
+                    if(roomID === 'gameRoom'){
+                        $('#roomList').append('<li class="list-group-item">目前大廳有: <span style="color: red">' + roomInfo[roomID].length + '</span>人</li>');
+                    }else {
+                        $('#roomList').append('<li class="list-group-item">房間: <span style="color: blue">' + roomID + '</span> <i class="fa fa-arrow-right"></i> ' + roomInfo[roomID].length + '人&nbsp<a href="/gameRoom/' + roomID + '" class="btn btn-primary">進入</a></li>');
+                    }
+                }
+            });
+            
+            //接收後端廣播的聊天訊息
+            socket.on('chat', function(user, userChat) {
+                $('#cardBody').append('<p class="cardText">' + user + ': ' + userChat + '</p><hr>');
+                $('#cardBody').scrollTop($('#cardBody')[0].scrollHeight);
+            });
+            
+            //接收後端訊息
+            socket.on('system', function(sysMsg, users) {
+                var msg = '【<span style="color: red">系統</span>】: '+sysMsg+'<br>';
+                $('#msgLog').append('<p class="cardText">' + msg + '</p>');
+            });
+            
+            
+            //每秒要求接收一次房間列表
+            setInterval(function() {
+                socket.emit('rooms');
+            },1000);
+            
+            
+            //傳送聊天訊息
+            $('#lobbyChat').bind("enterKey",function(e){
+                sendMsg();
+                $('#lobbyChat').focus();
+            });
+            $('#lobbyChat').keyup(function(e){
+                if(e.keyCode == 13) {
+                    $(this).trigger("enterKey");
+                }
+            });
+            function sendMsg() {
+                if($.trim($('#lobbyChat').val())) {
+                    socket.emit('chat', userName, $('#lobbyChat').val());
+                    $('#lobbyChat').val('');
+                }
+            }
+            ////叫出暱稱設定表單
+            function changeNameDialogOpen() {
+                $('#dialog').modal('show');
+            }
+            //儲存暱稱
+            function saveUID() {
+                userName = $('#userID').val();
+                sessionStorage.setItem('user', userName);
+                $('#userDisplay').html('<span class="navbar-brand navbar-right">目前暱稱: ' + userName + '</span>');
+                socket.emit('changeName', userName);
+                $('#dialog').modal('toggle');
+            }
+            
+            //叫出新房間建立表單
+            function newRoomDialogOpen() {
+                $('#newRoomDialog').modal('show');
+            }
+            //建立新房間
+            function newRoom() {
+                window.location.href = '/gameRoom/' + $('#newRoomID').val();
+            }
+            
+        </script>
+    </body>
+</html>
