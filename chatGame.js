@@ -94,6 +94,9 @@ function leaveRoom(socket, roomID, user) {
     console.log(user + '離開了' + roomID);
 }
 
+app.get('/', function(req, res) {
+    res.redirect('/gameRoom/');
+});
 
 app.get('/gameRoom/', function(req, res) {
     res.render('index', {});
