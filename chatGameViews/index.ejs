@@ -40,21 +40,23 @@
         <!--建立新房間表單-->
         <div class="modal fade" tabindex="-1" role="dialog" id="newRoomDialog">
             <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">建立新房間</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
+                <form action="/newRoom/" method="post">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">建立新房間</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="text" class="form-control" name="newRoomID" id="newRoomID">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary" id="newRoomBtn" disabled>確定</button>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        </div>
                     </div>
-                    <div class="modal-body">
-                        <input type="text" class="form-control" id="newRoomID">
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" onclick="newRoom();">確定</button>
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
-                    </div>
-                </div>
+                </form>
             </div>
         </div>
         <!--網頁主外觀-->
@@ -126,7 +128,11 @@
                     if(roomID === 'gameRoom'){
                         $('#roomList').append('<li class="list-group-item">目前大廳有: <span style="color: red">' + roomInfo[roomID].length + '</span>人</li>');
                     }else {
-                        $('#roomList').append('<li class="list-group-item">房間: <span style="color: blue">' + roomID + '</span> <i class="fa fa-arrow-right"></i> ' + roomInfo[roomID].length + '人&nbsp<a href="/gameRoom/' + roomID + '" class="btn btn-primary">進入</a></li>');
+                        if(roomInfo[roomID].length == 2) {
+                            $('#roomList').append('<li class="list-group-item">房間: <span style="color: blue">' + roomID + '</span> <i class="fa fa-arrow-right"></i> ' + roomInfo[roomID].length + '人 <span style="color: red">房間已滿</span>');
+                        }else {
+                            $('#roomList').append('<li class="list-group-item">房間: <span style="color: blue">' + roomID + '</span> <i class="fa fa-arrow-right"></i> ' + roomInfo[roomID].length + '人&nbsp<a href="/gameRoom/' + roomID + '" class="btn btn-primary">進入</a></li>');
+                        }
                     }
                 }
             });
@@ -155,21 +161,25 @@
                 sendMsg();
                 $('#lobbyChat').focus();
             });
+            
             $('#lobbyChat').keyup(function(e){
                 if(e.keyCode == 13) {
                     $(this).trigger("enterKey");
                 }
             });
+            
             function sendMsg() {
                 if($.trim($('#lobbyChat').val())) {
                     socket.emit('chat', userName, $('#lobbyChat').val());
                     $('#lobbyChat').val('');
                 }
             }
-            ////叫出暱稱設定表單
+            
+            //叫出暱稱設定表單
             function changeNameDialogOpen() {
                 $('#dialog').modal('show');
             }
+            
             //儲存暱稱
             function saveUID() {
                 userName = $('#userID').val();
@@ -183,10 +193,27 @@
             function newRoomDialogOpen() {
                 $('#newRoomDialog').modal('show');
             }
-            //建立新房間
-            function newRoom() {
-                window.location.href = '/gameRoom/' + $('#newRoomID').val();
-            }
+            
+            //實時檢查房間ID是否重複
+            $('#newRoomID').bind("keyup change", function() {
+                var newRoomID = $('#newRoomID').val();
+                $.ajax({
+                    url: '/checkRoomExist/',
+                    type: 'POST',
+                    data: {
+                        send: true,
+                        newRoomID: newRoomID,
+                    },
+                    success: function(data) {
+                        console.log(data);
+                        if(data == false) {
+                            $("#newRoomBtn").attr("disabled", false);
+                        }else {
+                            $("#newRoomBtn").attr("disabled", true);
+                        }
+                    }
+                });
+            });
             
         </script>
     </body>

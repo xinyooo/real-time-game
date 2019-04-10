@@ -1,10 +1,14 @@
 var express = require('express');
 var path = require('path');
 var socketio = require('socket.io');
+var bodyParser = require('body-parser');
 
 var app = express();
 var server = require('http').createServer(app);
+
 app.use(express.static(path.join(__dirname, 'chatGameStatic')));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded());
 app.set('views', path.join(__dirname, 'chatGameViews'));
 app.set('view engine', 'ejs');
 
@@ -94,8 +98,28 @@ function leaveRoom(socket, roomID, user) {
     console.log(user + '離開了' + roomID);
 }
 
+
+//Router
 app.get('/', function(req, res) {
     res.redirect('/gameRoom/');
+});
+
+app.post('/newRoom/', function(req, res) {
+    var newRoomID = req.body.newRoomID;
+    if(!roomInfo[newRoomID]) {
+        res.redirect('/gameRoom/' + req.body.newRoomID);
+    }else {
+        res.redirect('/gameRoom/');
+    }
+});
+
+app.post('/checkRoomExist/', function(req, res) {
+    var newRoomID = req.body.newRoomID;
+    if(roomInfo[newRoomID] || newRoomID === '') {
+        res.json(true);
+    }else {
+        res.json(false);
+    }
 });
 
 app.get('/gameRoom/', function(req, res) {
