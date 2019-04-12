@@ -8,7 +8,7 @@ var server = require('http').createServer(app);
 
 app.use(express.static(path.join(__dirname, 'chatGameStatic')));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.set('views', path.join(__dirname, 'chatGameViews'));
 app.set('view engine', 'ejs');
 
@@ -71,16 +71,29 @@ function joinRoom(socket, roomID, user) {
     if(!roomInfo[roomID]) {
         roomInfo[roomID] = [];
     }
-    if(roomInfo[roomID].length <= 1) {
+    if(roomID !== 'gameRoom') {
+        if(roomInfo[roomID].length <= 1) {
+            roomInfo[roomID].push(user);
+            //建立該房之socket
+            socket.join(roomID);
+            //通知該房之所有使用者
+            io.to(roomID).emit('system', user+'加入了房間', roomInfo[roomID]);
+            console.log(user + '加入了' + roomID);
+            if(roomInfo[roomID].length === 2) {
+                gameStart(roomID);
+            }
+        }else {
+            socket.emit('roomFull');
+        }
+    }else {
         roomInfo[roomID].push(user);
         //建立該房之socket
         socket.join(roomID);
         //通知該房之所有使用者
-        io.to(roomID).emit('system', user+'加入了房間', roomInfo[roomID]);
+        io.to(roomID).emit('system', user+'加入了大廳', roomInfo[roomID]);
         console.log(user + '加入了' + roomID);
-    }else {
-        socket.emit('roomFull');
     }
+    
 }
 
 function leaveRoom(socket, roomID, user) {
@@ -88,18 +101,42 @@ function leaveRoom(socket, roomID, user) {
     if(userIndex !== -1) {
         roomInfo[roomID].splice(userIndex, 1);
     }
+    if(roomInfo[roomID].length <= 1) {
+        gameStop(roomID);
+    }
     if(roomInfo[roomID].length === 0) {
         delete roomInfo[roomID];
     }
     //離開所在房
     socket.leave(roomID);
     //通知該房之所有使用者
-    io.to(roomID).emit('system', user + '離開了房間', roomInfo[roomID]);
+    if(roomID !== 'gameRoom') {
+        io.to(roomID).emit('system', user + '離開了房間', roomInfo[roomID]);
+    }else {
+        io.to(roomID).emit('system', user + '離開了大廳', roomInfo[roomID]);
+    }
     console.log(user + '離開了' + roomID);
 }
 
 
-//Router
+//----------遊戲----------//
+function gameStart(roomID) {
+    generateGameMap(roomID);
+    io.to(roomID).emit('gameProc');
+}
+
+function gameStop(roomID) {
+    io.to(roomID).emit('gameStop');
+}
+
+function generateGameMap(roomID) {
+    
+}
+//----------END.----------//
+
+
+
+//----------Router----------//
 app.get('/', function(req, res) {
     res.redirect('/gameRoom/');
 });
@@ -129,6 +166,9 @@ app.get('/gameRoom/', function(req, res) {
 app.get('/gameRoom/:roomID', function(req, res) {
     res.render('room', {'roomID': req.params.roomID});
 });
+//----------END.----------//
+
+
 
 server.listen(process.env.PORT || 3000, process.env.IP || "0.0.0.0", function() {
     var addr = server.address();

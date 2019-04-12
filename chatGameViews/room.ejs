@@ -9,12 +9,32 @@
         <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <style>
+            .gameRegion {
+                min-height: 350px;
+            }
+        </style>
     </head>
     <body>
         <!--網頁主外觀-->
         <nav class="navbar navbar-expand-md navbar-dark bg-dark">
             <span class="navbar-brand" href="#"><div id="roomID"></div></span><div id="userDisplay"></div><a class="navbar-brand btn btn-success" href="/gameRoom/">回到大廳</a>
         </nav>
+        <hr>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card gameRegion">
+                        Here comes the logo image
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card gameRegion">
+                        Here comes the logo image
+                    </div>
+                </div>
+            </div>
+        </div>
         <hr>
         <div class="container-fluid">
             <div class="card">
@@ -29,10 +49,7 @@
             //init
             jQuery(document).ready(function($) {
                 userName = sessionStorage.getItem('user');
-                var url = decodeURIComponent(window.location.href);
-                var spilted = url.split('/');
-                var roomID = spilted[spilted.length - 1];
-                $('#roomID').html('<span class="navbar-brand order-md-last">房間: ' + roomID + '</span>');
+                $('#roomID').html('<span class="navbar-brand order-md-last">房間: <%= roomID %></span>');
                 $('#userDisplay').html('<span class="navbar-brand order-md-last">目前暱稱: ' + userName + '</span>');
             });
             
@@ -45,7 +62,7 @@
             
             //接收後端訊息
             socket.on('system', function(sysMsg, users) {
-                var msg = '後端通知: '+sysMsg+'<br>';
+                var msg = '【<span style="color: red">系統</span>】: '+sysMsg+'<br>';
                 $('#msgLog').append(msg);
                 console.log('後端通知: '+sysMsg);
                 console.log('在此房間的使用者數量: '+users.length);
@@ -57,6 +74,15 @@
                     document.location.href = '/gameRoom/';
                 }
             });
+            
+            //----------遊戲----------//
+            socket.on('gameProc', function() {
+                console.log('遊戲開始!');
+            });
+            socket.on('gameStop', function() {
+                console.log('遊戲停止!');
+            });
+            //----------END.----------//
             
         </script>
     </body>

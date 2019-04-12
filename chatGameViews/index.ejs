@@ -12,7 +12,7 @@
         <style>
             .scroll {
                 max-height: 350px;
-                overflow-y : scroll;
+                overflow-y : auto;
             }
         </style>
     </head>
@@ -128,7 +128,7 @@
                     if(roomID === 'gameRoom'){
                         $('#roomList').append('<li class="list-group-item">目前大廳有: <span style="color: red">' + roomInfo[roomID].length + '</span>人</li>');
                     }else {
-                        if(roomInfo[roomID].length == 2) {
+                        if(roomInfo[roomID].length === 2) {
                             $('#roomList').append('<li class="list-group-item">房間: <span style="color: blue">' + roomID + '</span> <i class="fa fa-arrow-right"></i> ' + roomInfo[roomID].length + '人 <span style="color: red">房間已滿</span>');
                         }else {
                             $('#roomList').append('<li class="list-group-item">房間: <span style="color: blue">' + roomID + '</span> <i class="fa fa-arrow-right"></i> ' + roomInfo[roomID].length + '人&nbsp<a href="/gameRoom/' + roomID + '" class="btn btn-primary">進入</a></li>');
@@ -205,8 +205,7 @@
                         newRoomID: newRoomID,
                     },
                     success: function(data) {
-                        console.log(data);
-                        if(data == false) {
+                        if(data === false) {
                             $("#newRoomBtn").attr("disabled", false);
                         }else {
                             $("#newRoomBtn").attr("disabled", true);
