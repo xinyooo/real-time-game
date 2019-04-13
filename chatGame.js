@@ -17,6 +17,7 @@ var io = socketio.listen(server);
 
 //房間使用者名單
 var roomInfo = {};
+var readyState = {};
 
 io.on('connection', function(socket) {
     
@@ -56,6 +57,27 @@ io.on('connection', function(socket) {
         socket.emit('rooms', roomInfo);
     });
     
+	/*
+	//遊戲準備按鈕監聽
+	socket.on('readyClick', function(user) {
+		var userIndex = readyState[roomID].indexOf(user);
+		if(userIndex !== -1) {
+			//取消準備
+			readyState[roomID].splice(userIndex, 1);
+			//告知對手
+			socket.broadcast.to(roomID).emit('readyClick', false);
+		}else {
+			//準備
+			readyState[roomID].push(user);
+			console.log('準備!');
+			//告知對手
+			socket.broadcast.to(roomID).emit('readyClick', true);
+		}
+	});	
+	*/
+	
+	
+	
     //離開
     socket.on('leave', function() {
         socket.emit('disconnect');
@@ -70,6 +92,7 @@ io.on('connection', function(socket) {
 function joinRoom(socket, roomID, user) {
     if(!roomInfo[roomID]) {
         roomInfo[roomID] = [];
+		readyState[roomID] = [];
     }
     if(roomID !== 'gameRoom') {
         if(roomInfo[roomID].length <= 1) {
@@ -79,9 +102,6 @@ function joinRoom(socket, roomID, user) {
             //通知該房之所有使用者
             io.to(roomID).emit('system', user+'加入了房間', roomInfo[roomID]);
             console.log(user + '加入了' + roomID);
-            if(roomInfo[roomID].length === 2) {
-                gameStart(roomID);
-            }
         }else {
             socket.emit('roomFull');
         }
@@ -106,6 +126,7 @@ function leaveRoom(socket, roomID, user) {
     }
     if(roomInfo[roomID].length === 0) {
         delete roomInfo[roomID];
+		delete readyState[roomID];
     }
     //離開所在房
     socket.leave(roomID);
@@ -120,7 +141,7 @@ function leaveRoom(socket, roomID, user) {
 
 
 //----------遊戲----------//
-function gameStart(roomID) {
+function gameProc(roomID) {
     generateGameMap(roomID);
     io.to(roomID).emit('gameProc');
 }

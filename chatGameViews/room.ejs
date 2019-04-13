@@ -9,6 +9,9 @@
         <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/phaser@3.16.2/dist/phaser.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/phaser@3.16.2/dist/phaser.min.js"></script>
+		
         <style>
             .gameRegion {
                 min-height: 350px;
@@ -25,12 +28,16 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="card gameRegion">
-                        Here comes the logo image
+						<span class="badge badge-primary">你</span>
+						<div class="card" id="playerGameRegion"></div>
+						<button class="btn btn-primary" onclick="readyBtn();" type="button" id="readyButton">準備&nbsp;<i class="fa fa-question" aria-hidden="true"></i></button>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="card gameRegion">
-                        Here comes the logo image
+                        <span class="badge badge-success">對手</span>
+						<div class="card" id="playerGameRegion2"></div>
+						<button class="btn btn-primary" type="button" id="competitorButton">準備&nbsp;<i class="fa fa-question" aria-hidden="true"></i></button>
                     </div>
                 </div>
             </div>
@@ -74,14 +81,92 @@
                     document.location.href = '/gameRoom/';
                 }
             });
-            
+            /*
+			//對手準備狀態
+			socket.on('readyClick', function(data) {
+				if(data === true) {
+					$('#competitorButton').html('準備完成&nbsp;<i class="fa fa-check" aria-hidden="true"></i>');
+				}else if(data === false) {
+					$('#competitorButton').html('準備&nbsp;<i class="fa fa-question" aria-hidden="true"></i>');
+				}				
+			});*/
+			
+			
             //----------遊戲----------//
+			var ready = false;
+			function readyBtn() {
+				if(ready === false) {
+					ready = true;
+					$('#readyButton').html('準備完成&nbsp;<i class="fa fa-check" aria-hidden="true"></i>');
+					$('#readyButton').addClass('disabled');					
+				}else if(ready === true) {
+					ready = false;
+					$('#readyButton').html('準備&nbsp;<i class="fa fa-question" aria-hidden="true"></i>');
+					$('#readyButton').removeClass('disabled');
+				}
+				socket.emit('readyClick');
+			}
+			
             socket.on('gameProc', function() {
                 console.log('遊戲開始!');
             });
             socket.on('gameStop', function() {
                 console.log('遊戲停止!');
             });
+			
+			//GAME ENGINE PHASER.JS//
+			var config = {
+				type: Phaser.AUTO,
+				width: 800,
+				height: 600,
+				parent: playerGameRegion,
+				physics: {
+					default: 'arcade',
+					arcade: {
+						gravity: { y: 300 },
+						debug: false
+					}
+				},
+				scene: {
+					preload: preload,
+					create: create,
+					update: update
+				}
+			};
+
+			var player;
+			var cursors;
+			var score = 0;
+			var timeText;
+
+			var game = new Phaser.Game(config);
+
+			function preload ()
+			{
+				this.load.image('background', '../assets/background.jpg');
+				this.load.spritesheet('player', '../assets/dude.png', { frameWidth: 32, frameHeight: 48 });
+			}
+
+			function create ()
+			{
+				
+				this.add.image(0, 0, 'background');
+				timeText = this.add.text(16, 16, '時間: 0', { fontSize: '32px', fill: '#000' });
+				
+				
+			}
+
+			var sec = 0;
+			function update ()
+			{
+				timeText.setText(sec);	
+			}
+			
+			
+			setInterval(function() {
+				sec++;
+			},1000);
+			
             //----------END.----------//
             
         </script>
