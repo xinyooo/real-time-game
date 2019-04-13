@@ -57,7 +57,7 @@ io.on('connection', function(socket) {
         socket.emit('rooms', roomInfo);
     });
     
-	/*
+	
 	//遊戲準備按鈕監聽
 	socket.on('readyClick', function(user) {
 		var userIndex = readyState[roomID].indexOf(user);
@@ -73,8 +73,7 @@ io.on('connection', function(socket) {
 			//告知對手
 			socket.broadcast.to(roomID).emit('readyClick', true);
 		}
-	});	
-	*/
+	});
 	
 	
 	

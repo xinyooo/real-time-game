@@ -81,7 +81,7 @@
                     document.location.href = '/gameRoom/';
                 }
             });
-            /*
+            
 			//對手準備狀態
 			socket.on('readyClick', function(data) {
 				if(data === true) {
@@ -89,7 +89,7 @@
 				}else if(data === false) {
 					$('#competitorButton').html('準備&nbsp;<i class="fa fa-question" aria-hidden="true"></i>');
 				}				
-			});*/
+			});
 			
 			
             //----------遊戲----------//
@@ -104,7 +104,7 @@
 					$('#readyButton').html('準備&nbsp;<i class="fa fa-question" aria-hidden="true"></i>');
 					$('#readyButton').removeClass('disabled');
 				}
-				socket.emit('readyClick');
+				socket.emit('readyClick', userName);
 			}
 			
             socket.on('gameProc', function() {
