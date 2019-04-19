@@ -56,7 +56,6 @@ io.on('connection', function(socket) {
         roomInfo[roomID].push(userName);
         socket.emit('rooms', roomInfo);
     });
-    
 	
 	//遊戲準備按鈕監聽
 	socket.on('readyClick', function(user) {
@@ -81,8 +80,6 @@ io.on('connection', function(socket) {
 			}
 		}
 	});
-	
-	
 	
     //離開
     socket.on('leave', function() {
