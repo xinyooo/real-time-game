@@ -69,9 +69,11 @@ io.on('connection', function(socket) {
 		}else {
 			//準備
 			readyState[roomID].push(user);
-			console.log('準備!');
 			//告知對手
 			socket.broadcast.to(roomID).emit('readyClick', true);
+			if(readyState[roomID].length === 2) {
+				
+			}
 		}
 	});
 	
