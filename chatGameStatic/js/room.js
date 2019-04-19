@@ -379,7 +379,11 @@ function runCode() {
 				}else {
 					actionTable.rows[cellIndex-i].style.backgroundColor ="red";
 					alert("請輸入forward指令所接受之有效數字!")
-					restart();
+					$('#gameButton1').attr("disabled", true);
+					$('#gameButton2').attr("disabled", true);
+					$('#gameButton3').attr("disabled", true);
+					$('#gameButton4').attr("disabled", true);
+					$('#gameButton6').attr("disabled", true);
 					throw new Error("Error! please enter a reasonable number of steps.")
 				}
 			}
