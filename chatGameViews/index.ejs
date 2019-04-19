@@ -188,6 +188,16 @@
                 socket.emit('changeName', userName);
                 $('#dialog').modal('toggle');
             }
+			
+			$('#userID').keyup(function(e){
+                if(e.keyCode == 13) {
+                    $(this).trigger("enterKey");
+                }
+            });
+			
+			$('#userID').bind("enterKey",function(e){
+                saveUID();
+            });
             
             //叫出新房間建立表單
             function newRoomDialogOpen() {
