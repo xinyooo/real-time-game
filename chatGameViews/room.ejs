@@ -25,9 +25,9 @@
 						<span class="badge badge-primary">你</span>
 						<div class="card" id="playerGameRegion"></div>
 						<h1 class="card-text text-center" id="timerText1" style="color: red;"></h1>
-						<input class="btn btn-outline-secondary" type="button" value="forward" onclick="move();" style="display: none;" id="gameButton1">
-						<input class="btn btn-outline-secondary" type="button" value="turn Right" onclick="turn('right')" style="display: none;" id="gameButton2">
-						<input class="btn btn-outline-secondary" type="button" value="turn Left" onclick="turn('left')" style="display: none;" id="gameButton3">
+						<input class="btn btn-outline-secondary" type="button" value="Forward" onclick="move();" style="display: none;" id="gameButton1">
+						<input class="btn btn-outline-secondary" type="button" value="Turn Right" onclick="turn('right')" style="display: none;" id="gameButton2">
+						<input class="btn btn-outline-secondary" type="button" value="Turn Left" onclick="turn('left')" style="display: none;" id="gameButton3">
 						<button class="btn btn-primary" onclick="readyBtn();" type="button" id="readyButton">準備&nbsp;<i class="fa fa-question" aria-hidden="true"></i></button>
                     </div>
                 </div>
@@ -320,7 +320,7 @@
 					direction=(direction==3)?0:direction+=1;
 					if(direction==0){ //西到北
 						player.anims.play('turn1');
-					}else if(direction==1) { // 北到東
+					}else if(direction==1) { //北到東
 						player.anims.play('turn2');
 					}else if(direction==2){ //東到南
 						player.anims.play('turn3');
@@ -347,7 +347,7 @@
 						comDirection=(comDirection==3)?0:comDirection+=1;
 						if(comDirection==0){ //西到北
 							comPlayer.anims.play('turn1');
-						}else if(comDirection==1) { // 北到東
+						}else if(comDirection==1) { //北到東
 							comPlayer.anims.play('turn2');
 						}else if(comDirection==2){ //東到南
 							comPlayer.anims.play('turn3');
