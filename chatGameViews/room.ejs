@@ -11,12 +11,6 @@
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 		<script src="https://cdn.jsdelivr.net/npm/phaser@3.16.2/dist/phaser.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/phaser@3.16.2/dist/phaser.min.js"></script>
-		<script src="/js/maze.js"></script>
-        <style>
-            .gameRegion {
-                min-height: 350px;
-            }
-        </style>
     </head>
     <body>
         <!--網頁主外觀-->
@@ -30,9 +24,10 @@
                     <div class="card gameRegion">
 						<span class="badge badge-primary">你</span>
 						<div class="card" id="playerGameRegion"></div>
-						<input class="btn btn-default" type="button" value="forward" onclick="move();">
-						<input class="btn btn-default" type="button" value="turn Right" onclick="turn('right')">
-						<input class="btn btn-default" type="button" value="turn Left" onclick="turn('left')">
+						<h1 class="card-text text-center" id="timerText1" style="color: red;"></h1>
+						<input class="btn btn-outline-secondary" type="button" value="forward" onclick="move();" style="display: none;" id="gameButton1">
+						<input class="btn btn-outline-secondary" type="button" value="turn Right" onclick="turn('right')" style="display: none;" id="gameButton2">
+						<input class="btn btn-outline-secondary" type="button" value="turn Left" onclick="turn('left')" style="display: none;" id="gameButton3">
 						<button class="btn btn-primary" onclick="readyBtn();" type="button" id="readyButton">準備&nbsp;<i class="fa fa-question" aria-hidden="true"></i></button>
                     </div>
                 </div>
@@ -40,6 +35,7 @@
                     <div class="card gameRegion">
                         <span class="badge badge-success">對手</span>
 						<div class="card" id="playerGameRegion2"></div>
+						<h1 class="card-text text-center" id="timerText2" style="color: red;"></h1>
 						<button class="btn btn-primary" type="button" id="competitorButton">準備&nbsp;<i class="fa fa-question" aria-hidden="true"></i></button>
                     </div>
                 </div>
@@ -83,8 +79,181 @@
                 if(!alert('房間已滿，將退回大廳')) {
                     document.location.href = '/gameRoom/';
                 }
+            });	
+			
+			
+			//x為自定義產生地圖隔數(幾x幾)
+			//mazeArray產生地圖陣列return [x][y][top,right,bottom,left]
+            socket.on('gameProc', function(mazeArray, x) {
+                console.log('遊戲開始!');
+				$('#readyButton').hide();
+				$('#competitorButton').hide();
+				var count = 10;
+				var t = setTimeout(time = function() {
+					if(count === 0) {
+						clearTimeout(t);
+						$('#timerText1').hide();
+						$('#timerText2').hide();
+						$('#gameButton1').show();
+						$('#gameButton2').show();
+						$('#gameButton3').show();
+						//GAME ENGINE PHASER.JS//
+						var direction=2; //0:North  1:East 2:South 3:West
+						var userX=0;//烏龜位置在地圖的第幾列
+						var userY=0;//烏龜位置在地圖的第幾行
+						var config = {
+							type: Phaser.CANVAS,
+							width: x*90+10,
+							height: x*90+10,
+							parent: playerGameRegion,
+							physics: {
+								default: 'arcade',
+								arcade: {
+									debug: false
+								}
+							},
+							scene: {
+								preload: preload,
+								create: create,
+							}
+						};
+						var game = new Phaser.Game(config);
+						var wall;
+						var player;
+						var goal;
+						
+						function preload() {
+							this.load.image('sky', '/assets/sky.png');
+							this.load.image('wall', '/assets/wall.png');
+							this.load.spritesheet('turtle', 
+								'/assets/turtle.png',
+								{ frameWidth: 50, frameHeight: 50 }
+							);
+							this.load.image('goal','/assets/star.png');
+						}
+						
+						function create() {
+							this.add.image(400, 300, 'sky');
+							wall = this.physics.add.staticGroup();
+							for(var i = 0; i < x; i++) {
+								for(var j = 0; j < x; j++)
+								{
+									for(var k = 0; k < 4; k++){
+										if(mazeArray[i][j][k]==0){
+											wall.create(50+j*90, 50+i*90, 'wall').angle=90*k;
+										}
+									}
+								}
+							}
+							goal = this.physics.add.sprite(x*90-40, x*90-40, 'goal');
+							player = this.physics.add.sprite(50, 50, 'turtle');
+							// anims key值：從南向右轉turn0~turn3  //從南向左轉turn4~turn7
+							for(var i=0;i<8;i++) {
+								this.anims.create({
+									key: 'turn'+i,
+									frames: this.anims.generateFrameNumbers('turtle', { start: 2*i, end: 2*i+2 }),
+									frameRate: 20,
+								}); 
+							}
+							this.anims.create({
+								key: 'north',
+								frames: [ { key: 'turtle', frame: 4} ],
+								duration: 1000,
+								frameRate: 1
+							});
+							this.anims.create({
+								key: 'east',
+								frames: [ { key: 'turtle', frame: 6 } ],
+								duration: 1000,
+								frameRate: 1
+							});
+							this.anims.create({
+								key: 'south',
+								frames: [ { key: 'turtle', frame: 0 } ],
+								duration: 1000,
+								frameRate: 1
+							});
+							this.anims.create({
+								key: 'west',
+								frames: [ { key: 'turtle', frame: 2 } ],
+								duration: 1000,
+								frameRate: 1
+							});
+							
+							
+						}
+						
+						function move() {
+							if(direction==0){
+								if(mazeArray[userX][userY][0]==0){
+									alert("bomb north!")
+								}else{
+									player.anims.play('north');
+									player.y -=90;
+									userX-=1;
+								}
+							}else if(direction==1){
+								if(mazeArray[userX][userY][1]==0){
+									alert("bomb east!")
+								}else{
+									player.anims.play('east');
+									player.x +=90;
+									userY+=1;
+								}
+							}else if(direction==2){
+								if(mazeArray[userX][userY][2]==0){
+									alert("bomb south!")
+								}else{
+									player.anims.play('south');
+									player.y +=90;
+									userX+=1;
+								}
+							}else if(direction==3){
+								if(mazeArray[userX][userY][3]==0){
+									alert("bomb west!")
+								}else{
+									player.anims.play('west');
+									player.x -=90;
+									userY-=1;
+								}
+							}
+						}
+						
+						function turn(dir) {
+							if(dir=="right"){
+								direction=(direction==3)?0:direction+=1;
+								if(direction==0){ //西到北
+									player.anims.play('turn1');
+								}else if(direction==1) { // 北到東
+									player.anims.play('turn2');
+								}else if(direction==2){ //東到南
+									player.anims.play('turn3');
+								}else if(direction==3){ //南到西
+									player.anims.play('turn0');
+								}
+							} else if(dir=="left"){
+								direction=(direction==0)?3:direction-=1;
+								if(direction==0){  //東到北
+									player.anims.play('turn5');
+								}else if(direction==1){ //南到東
+									player.anims.play('turn4');
+								}else if(direction==2){ //西到南
+									player.anims.play('turn7');
+								}else if(direction==3){ //北到西
+									player.anims.play('turn6');
+								}
+							}     
+						}
+						//----------END.----------//
+					}else {
+						$('#timerText1').text(count);
+						$('#timerText2').text(count);
+						count--;
+						setTimeout(time, 1000);
+					}
+				}, 1000);
             });
-            
+			
 			//對手準備狀態
 			socket.on('readyClick', function(data) {
 				if(data === true) {
@@ -110,177 +279,11 @@
 				socket.emit('readyClick', userName);
 			}
 			
-            socket.on('gameProc', function() {
-                console.log('遊戲開始!');
-            });
             socket.on('gameStop', function() {
                 console.log('遊戲停止!');
             });
 			
-			//GAME ENGINE PHASER.JS//
-			var direction=2; //0:North  1:East 2:South 3:West
-			var userX=0;//烏龜位置在地圖的第幾列
-			var userY=0;//烏龜位置在地圖的第幾行
 			
-			// 自定義產生地圖隔數(幾x幾）
-			var x=5
-			// 產生地圖陣列：return [x][y][top,right,bottom,left]    
-			var mazeArray = newMaze(x, x);
-
-			var config = {
-				type: Phaser.CANVAS,
-				width: x*90+10,
-				height: x*90+10,
-				parent: playerGameRegion,
-				physics: {
-					default: 'arcade',
-					arcade: {
-						debug: false
-					}
-				},
-				scene: {
-					preload: preload,
-					create: create,
-					update: update
-				}
-			};
-			var game = new Phaser.Game(config);
-			var wall;
-			var player;
-			var goal;
-			
-			function preload() {
-				this.load.image('sky', '/assets/sky.png');
-				this.load.image('wall', '/assets/wall.png');
-				this.load.spritesheet('turtle', 
-					'/assets/turtle.png',
-					{ frameWidth: 50, frameHeight: 50 }
-				);
-				this.load.image('goal','/assets/star.png');
-			}
-			
-			function create() {
-				this.add.image(400, 300, 'sky');
-				wall = this.physics.add.staticGroup();
-				for(var i = 0; i < x; i++) {
-					for(var j = 0; j < x; j++)
-					{
-						for(var k = 0; k < 4; k++){
-							if(mazeArray[i][j][k]==0){
-								wall.create(50+j*90, 50+i*90, 'wall').angle=90*k;
-							}
-						}
-					}
-				}
-				goal = this.physics.add.sprite(x*90-40, x*90-40, 'goal');
-				player = this.physics.add.sprite(50, 50, 'turtle');
-				// anims key值：從南向右轉turn0~turn3  //從南向左轉turn4~turn7
-				for(var i=0;i<8;i++) {
-					this.anims.create({
-						key: 'turn'+i,
-						frames: this.anims.generateFrameNumbers('turtle', { start: 2*i, end: 2*i+2 }),
-						frameRate: 20,
-					}); 
-				}
-				this.anims.create({
-					key: 'north',
-					frames: [ { key: 'turtle', frame: 4} ],
-					duration: 1000,
-					frameRate: 1
-				});
-				this.anims.create({
-					key: 'east',
-					frames: [ { key: 'turtle', frame: 6 } ],
-					duration: 1000,
-					frameRate: 1
-				});
-				this.anims.create({
-					key: 'south',
-					frames: [ { key: 'turtle', frame: 0 } ],
-					duration: 1000,
-					frameRate: 1
-				});
-				this.anims.create({
-					key: 'west',
-					frames: [ { key: 'turtle', frame: 2 } ],
-					duration: 1000,
-					frameRate: 1
-				});
-				
-				
-			}
-			
-			
-			function update ()
-			{
-				
-
-			}
-
-			
-			function move() {
-				if(direction==0){
-					if(mazeArray[userX][userY][0]==0){
-						alert("bomb north!")
-					}else{
-						player.anims.play('north');
-						player.y -=90;
-						userX-=1;
-					}
-				}else if(direction==1){
-					if(mazeArray[userX][userY][1]==0){
-						alert("bomb east!")
-					}else{
-						player.anims.play('east');
-						player.x +=90;
-						userY+=1;
-					}
-				}else if(direction==2){
-					if(mazeArray[userX][userY][2]==0){
-						alert("bomb south!")
-					}else{
-						player.anims.play('south');
-						player.y +=90;
-						userX+=1;
-					}
-				}else if(direction==3){
-					if(mazeArray[userX][userY][3]==0){
-						alert("bomb west!")
-					}else{
-						player.anims.play('west');
-						player.x -=90;
-						userY-=1;
-					}
-				}
-			}
-			
-			
-			function turn(dir) {
-				if(dir=="right"){
-					direction=(direction==3)?0:direction+=1;
-					if(direction==0){ //西到北
-						player.anims.play('turn1');
-					}else if(direction==1) { // 北到東
-						player.anims.play('turn2');
-					}else if(direction==2){ //東到南
-						player.anims.play('turn3');
-					}else if(direction==3){ //南到西
-						player.anims.play('turn0');
-					}
-				} else if(dir=="left"){
-					direction=(direction==0)?3:direction-=1;
-					if(direction==0){  //東到北
-						player.anims.play('turn5');
-					}else if(direction==1){ //南到東
-						player.anims.play('turn4');
-					}else if(direction==2){ //西到南
-						player.anims.play('turn7');
-					}else if(direction==3){ //北到西
-						player.anims.play('turn6');
-					}
-				}     
-			}
-            //----------END.----------//
             
         </script>
     </body>
