@@ -49,9 +49,6 @@ io.on('connection', function(socket) {
 	socket.on('readyClick', function(user) {
 		var userIndex = readyState[roomID].indexOf(user);
 		if(userIndex !== -1) {
-			if(readyState[roomID].length === 2) {
-				io.to(roomID).emit('gameStop');
-			}
 			//取消準備
 			readyState[roomID].splice(userIndex, 1);
 			//告知對手
@@ -67,6 +64,11 @@ io.on('connection', function(socket) {
 				io.to(roomID).emit('gameProc', maze, x);
 			}
 		}
+	});
+	//傳輸遊戲資訊
+	socket.on('comAction', function(dir) {
+		//告知對手
+		socket.broadcast.to(roomID).emit('comAction', dir);
 	});
     //離開
     socket.on('leave', function() {
@@ -106,9 +108,11 @@ function leaveRoom(socket, roomID, user) {
     if(userIndex !== -1) {
         roomInfo[roomID].splice(userIndex, 1);
     }
-    if(roomInfo[roomID].length <= 1) {
-        gameStop(roomID);
+	userIndex = readyState[roomID].indexOf(user);
+    if(userIndex !== -1) {
+        readyState[roomID].splice(userIndex, 1);
     }
+	socket.broadcast.to(roomID).emit('readyClick', false);
     if(roomInfo[roomID].length === 0) {
         delete roomInfo[roomID];
 		delete readyState[roomID];
@@ -127,11 +131,6 @@ function leaveRoom(socket, roomID, user) {
 function gameProc(roomID) {
     generateGameMap(roomID);
     io.to(roomID).emit('gameProc');
-}
-function gameStop(roomID) {
-    io.to(roomID).emit('gameStop');
-}
-function generateGameMap(roomID) {
 }
 function newMaze(x, y) {
     // Establish variables and starting grid

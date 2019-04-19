@@ -89,6 +89,7 @@
 			var comX=0;//對手烏龜位置在地圖的第幾列
 			var comY=0;//對手烏龜位置在地圖的第幾行
 			var comGame;//對手遊戲畫面
+			var comPlayer;
 			//x為自定義產生地圖隔數(幾x幾)
 			//mazeArray產生地圖陣列return [x][y][top,right,bottom,left]
 			var mazeArray;
@@ -111,6 +112,22 @@
 						create: create,
 					}
 				};
+				var comConfig = {
+					type: Phaser.CANVAS,
+					width: x*90+10,
+					height: x*90+10,
+					parent: playerGameRegion2,
+					physics: {
+						default: 'arcade',
+						arcade: {
+							debug: false
+						}
+					},
+					scene: {
+						preload: preload,
+						create: comCreate,
+					}
+				};
 				$('#readyButton').hide();
 				$('#competitorButton').hide();
 				//倒數10秒
@@ -124,6 +141,7 @@
 						$('#gameButton2').show();
 						$('#gameButton3').show();
 						game = new Phaser.Game(config);
+						comGame = new Phaser.Game(comConfig);
 					}else {
 						$('#timerText1').text(count);
 						$('#timerText2').text(count);
@@ -156,6 +174,54 @@
 					}
 					goal = this.physics.add.sprite(x*90-40, x*90-40, 'goal');
 					player = this.physics.add.sprite(50, 50, 'turtle');
+					// anims key值：從南向右轉turn0~turn3  //從南向左轉turn4~turn7
+					for(var i=0;i<8;i++) {
+						this.anims.create({
+							key: 'turn'+i,
+							frames: this.anims.generateFrameNumbers('turtle', { start: 2*i, end: 2*i+2 }),
+							frameRate: 20,
+						});
+					}
+					this.anims.create({
+						key: 'north',
+						frames: [ { key: 'turtle', frame: 4} ],
+						duration: 1000,
+						frameRate: 1
+					});
+					this.anims.create({
+						key: 'east',
+						frames: [ { key: 'turtle', frame: 6 } ],
+						duration: 1000,
+						frameRate: 1
+					});
+					this.anims.create({
+						key: 'south',
+						frames: [ { key: 'turtle', frame: 0 } ],
+						duration: 1000,
+						frameRate: 1
+					});
+					this.anims.create({
+						key: 'west',
+						frames: [ { key: 'turtle', frame: 2 } ],
+						duration: 1000,
+						frameRate: 1
+					});
+				}
+				function comCreate() {
+					this.add.image(400, 300, 'sky');
+					wall = this.physics.add.staticGroup();
+					for(var i = 0; i < x; i++) {
+						for(var j = 0; j < x; j++)
+						{
+							for(var k = 0; k < 4; k++){
+								if(mazeArray[i][j][k]==0){
+									wall.create(50+j*90, 50+i*90, 'wall').angle=90*k;
+								}
+							}
+						}
+					}
+					goal = this.physics.add.sprite(x*90-40, x*90-40, 'goal');
+					comPlayer = this.physics.add.sprite(50, 50, 'turtle');
 					// anims key值：從南向右轉turn0~turn3  //從南向左轉turn4~turn7
 					for(var i=0;i<8;i++) {
 						this.anims.create({
@@ -247,6 +313,7 @@
 						userY-=1;
 					}
 				}
+				socket.emit('comAction', '');
 			}
 			function turn(dir) {
 				if(dir=="right"){
@@ -272,10 +339,61 @@
 						player.anims.play('turn6');
 					}
 				}
+				socket.emit('comAction', dir);
 			}
-            socket.on('gameStop', function() {
-                console.log('遊戲停止!');
-            });
+			socket.on('comAction', function(compDir) {
+				if(compDir !== '') {
+					if(compDir=="right"){
+						comDirection=(comDirection==3)?0:comDirection+=1;
+						if(comDirection==0){ //西到北
+							comPlayer.anims.play('turn1');
+						}else if(comDirection==1) { // 北到東
+							comPlayer.anims.play('turn2');
+						}else if(comDirection==2){ //東到南
+							comPlayer.anims.play('turn3');
+						}else if(comDirection==3){ //南到西
+							comPlayer.anims.play('turn0');
+						}
+					} else if(compDir=="left"){
+						comDirection=(comDirection==0)?3:comDirection-=1;
+						if(comDirection==0){  //東到北
+							comPlayer.anims.play('turn5');
+						}else if(comDirection==1){ //南到東
+							comPlayer.anims.play('turn4');
+						}else if(comDirection==2){ //西到南
+							comPlayer.anims.play('turn7');
+						}else if(comDirection==3){ //北到西
+							comPlayer.anims.play('turn6');
+						}
+					}
+				}else {
+					if(comDirection==0){
+						if(mazeArray[comX][comY][0]==1){
+							comPlayer.anims.play('north');
+							comPlayer.y -=90;
+							comX-=1;
+						}
+					}else if(comDirection==1){
+						if(mazeArray[comX][comY][1]==1){
+							comPlayer.anims.play('east');
+							comPlayer.x +=90;
+							comY+=1;
+						}
+					}else if(comDirection==2){
+						if(mazeArray[comX][comY][2]==1){
+							comPlayer.anims.play('south');
+							comPlayer.y +=90;
+							comX+=1;
+						}
+					}else if(comDirection==3){
+						if(mazeArray[comX][comY][3]==1){
+							comPlayer.anims.play('west');
+							comPlayer.x -=90;
+							comY-=1;
+						}
+					}
+				}
+			});
         </script>
     </body>
 </html>
