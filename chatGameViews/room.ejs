@@ -83,7 +83,7 @@
 			//init
 			jQuery(document).ready(function($) {
 				userName = sessionStorage.getItem('user');
-				$('#roomID').html('<span class="navbar-brand order-md-last">房間: <%= roomID %></span>');
+				$('#roomID').html('<span class="navbar-brand order-md-last">房間: <%= roomID %>&nbsp;難度: <%= level %></span>');
 				$('#userDisplay').html('<span class="navbar-brand order-md-last">目前暱稱: ' + userName + '</span>');
 			});
 		</script>

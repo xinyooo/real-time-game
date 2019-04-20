@@ -16,7 +16,7 @@ socket.on('connect', function() {
 	socket.emit('join', userName);
 });
 //接收房間列表
-socket.on('rooms', function(roomInfo) {
+socket.on('rooms', function(roomInfo, roomLevel) {
 	console.log('rooms:---'+roomInfo);
 	$('#roomList').empty();
 	for(var roomID in roomInfo){
@@ -24,9 +24,9 @@ socket.on('rooms', function(roomInfo) {
 			$('#roomList').append('<li class="list-group-item">目前大廳有: <span style="color: red">' + roomInfo[roomID].length + '</span>人</li>');
 		}else {
 			if(roomInfo[roomID].length === 2) {
-				$('#roomList').append('<li class="list-group-item">房間: <span style="color: blue">' + roomID + '</span> <i class="fa fa-arrow-right"></i> ' + roomInfo[roomID].length + '人 <span style="color: red">房間已滿</span>');
+				$('#roomList').append('<li class="list-group-item">【'+ roomLevel[roomID] +'】房間: <span style="color: blue">' + roomID + '</span> <i class="fa fa-arrow-right"></i> ' + roomInfo[roomID].length + '人 <span style="color: red">房間已滿</span>');
 			}else {
-				$('#roomList').append('<li class="list-group-item">房間: <span style="color: blue">' + roomID + '</span> <i class="fa fa-arrow-right"></i> ' + roomInfo[roomID].length + '人&nbsp<a href="/gameRoom/' + roomID + '" class="btn btn-primary">進入</a></li>');
+				$('#roomList').append('<li class="list-group-item">【'+ roomLevel[roomID] +'】房間: <span style="color: blue">' + roomID + '</span> <i class="fa fa-arrow-right"></i> ' + roomInfo[roomID].length + '人&nbsp<a href="/gameRoom/' + roomID + '" class="btn btn-primary">進入</a></li>');
 			}
 		}
 	}

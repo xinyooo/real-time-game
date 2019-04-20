@@ -11,9 +11,10 @@ app.set('views', path.join(__dirname, 'chatGameViews'));
 app.set('view engine', 'ejs');
 //建立socket服務
 var io = socketio.listen(server);
-//房間使用者名單
+//房間
 var roomInfo = {};
 var readyState = {};
+var roomLevel = {};
 io.on('connection', function(socket) {
     //獲取request Socket服務的房間號
     var userName = '';
@@ -30,7 +31,7 @@ io.on('connection', function(socket) {
     });
     //房間列表
     socket.on('rooms', function() {
-        socket.emit('rooms', roomInfo);
+        socket.emit('rooms', roomInfo, roomLevel);
     });
     //接收並廣播聊天訊息至特定聊天室
     socket.on('chat', function(user, userChat) {
@@ -59,7 +60,14 @@ io.on('connection', function(socket) {
 			//告知對手
 			socket.broadcast.to(roomID).emit('readyClick', true);
 			if(readyState[roomID].length === 2) {
-				var x = 5;
+				var x;
+				if(roomLevel[roomID][0] === 'easy') {
+					x = 3;
+				}else if(roomLevel[roomID][0] === 'medium') {
+					x = 5;
+				}else if(roomLevel[roomID][0] === 'hard') {
+					x = 7;
+				}
 				var maze = newMaze(x,x);
 				io.to(roomID).emit('gameProc', maze, x);
 			}
@@ -116,6 +124,7 @@ function leaveRoom(socket, roomID, user) {
     if(roomInfo[roomID].length === 0) {
         delete roomInfo[roomID];
 		delete readyState[roomID];
+		delete roomLevel[roomID];
     }
     //離開所在房
     socket.leave(roomID);
@@ -189,7 +198,10 @@ app.get('/', function(req, res) {
 });
 app.post('/newRoom/', function(req, res) {
     var newRoomID = req.body.newRoomID;
+	level = req.body.level;
     if(!roomInfo[newRoomID]) {
+		roomLevel[newRoomID] = [];
+		roomLevel[newRoomID].push(level);
         res.redirect('/gameRoom/' + req.body.newRoomID);
     }else {
         res.redirect('/gameRoom/');
@@ -207,7 +219,7 @@ app.get('/gameRoom/', function(req, res) {
     res.render('index', {});
 });
 app.get('/gameRoom/:roomID', function(req, res) {
-    res.render('room', {'roomID': req.params.roomID});
+    res.render('room', {'roomID': req.params.roomID, 'level': roomLevel[req.params.roomID][0]});
 });
 //----------END.----------//
 server.listen(process.env.PORT || 3000, process.env.IP || "0.0.0.0", function() {

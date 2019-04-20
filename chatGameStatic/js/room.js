@@ -1,40 +1,5 @@
 //SOCKET
 var socket = io.connect();
-//使用者加入房間告知後端
-socket.on('connect', function() {
-	socket.emit('join', userName);
-});
-//接收後端訊息
-socket.on('system', function(sysMsg, users) {
-	var msg = '【<span style="color: red">系統</span>】: '+sysMsg+'<br>';
-	$('#msgLog').append(msg);
-});
-//聊天
-socket.on('chat', function(user, userChat) {
-	$('#cardBody').append('<p class="cardText">' + user + ': ' + userChat + '</p><hr>');
-	$('#cardBody').scrollTop($('#cardBody')[0].scrollHeight);
-});
-$('#lobbyChat').bind("enterKey",function(e){
-	sendMsg();
-	$('#lobbyChat').focus();
-});
-$('#lobbyChat').keyup(function(e){
-	if(e.keyCode === 13) {
-		$(this).trigger("enterKey");
-	}
-});
-function sendMsg() {
-	if($.trim($('#lobbyChat').val())) {
-		socket.emit('chat', userName, $('#lobbyChat').val());
-		$('#lobbyChat').val('');
-	}
-}
-//房間已滿
-socket.on('roomFull', function() {
-	if(!alert('房間已滿，將退回大廳')) {
-		document.location.href = '/gameRoom/';
-	}
-});
 //玩家
 var direction=2; //0:North  1:East 2:South 3:West
 var userX=0;//烏龜位置在地圖的第幾列
@@ -52,9 +17,13 @@ var comPlayer;
 //x為自定義產生地圖隔數(幾x幾)
 //mazeArray產生地圖陣列return [x][y][top,right,bottom,left]
 var mazeArray;
+var mazeSize;
+var resultText;
+var comResultText;
 socket.on('gameProc', function(maze, x) {
 	console.log('遊戲開始!');
 	mazeArray = maze;
+	mazeSize = x;
 	var config = {
 		type: Phaser.CANVAS,
 		width: x*90+10,
@@ -125,6 +94,7 @@ socket.on('gameProc', function(maze, x) {
 	function create() {
 		this.add.image(400, 300, 'sky');
 		wall = this.physics.add.staticGroup();
+		resultText = this.add.text(x*45-16, x*45-16, '', { fontSize: '32px', fill: '#f00' });
 		for(var i = 0; i < x; i++) {
 			for(var j = 0; j < x; j++)
 			{
@@ -173,6 +143,7 @@ socket.on('gameProc', function(maze, x) {
 	function comCreate() {
 		this.add.image(400, 300, 'sky');
 		wall = this.physics.add.staticGroup();
+		comResultText = this.add.text(x*45-16, x*45-16, '', { fontSize: '32px', fill: '#f00' });
 		for(var i = 0; i < x; i++) {
 			for(var j = 0; j < x; j++)
 			{
@@ -220,14 +191,6 @@ socket.on('gameProc', function(maze, x) {
 	}
 	//----------END.----------//
 });
-//對手準備狀態
-socket.on('readyClick', function(data) {
-	if(data === true) {
-		$('#competitorButton').html('準備完成&nbsp;<i class="fa fa-check" aria-hidden="true"></i>');
-	}else if(data === false) {
-		$('#competitorButton').html('準備&nbsp;<i class="fa fa-question" aria-hidden="true"></i>');
-	}
-});
 //----------遊戲----------//
 var ready = false;
 function readyBtn() {
@@ -242,6 +205,22 @@ function readyBtn() {
 	}
 	socket.emit('readyClick', userName);
 }
+//遊戲結果出爐並結束
+function gameWin() {
+	if(userX===(mazeSize-1) && userY===(mazeSize-1)) {
+		game.paused = true;
+		comGame.paused = true;
+		$('#gameButton1').attr("disabled", true);
+		$('#gameButton2').attr("disabled", true);
+		$('#gameButton3').attr("disabled", true);
+		$('#gameButton4').attr("disabled", true);
+		$('#gameButton5').attr("disabled", true);
+		$('#gameButton6').attr("disabled", true);
+		resultText.setText('WIN');
+		comResultText.setText('LOSE');
+		socket.emit('comAction', 'gameWin');
+	}
+}
 function move() {
 	if(direction==0) {
 		if(mazeArray[userX][userY][0]==0) {
@@ -250,6 +229,7 @@ function move() {
 			player.anims.play('north');
 			player.y -=90;
 			userX-=1;
+			gameWin();
 		}
 	}else if(direction==1) {
 		if(mazeArray[userX][userY][1]==0) {
@@ -258,6 +238,7 @@ function move() {
 			player.anims.play('east');
 			player.x +=90;
 			userY+=1;
+			gameWin();
 		}
 	}else if(direction==2) {
 		if(mazeArray[userX][userY][2]==0) {
@@ -266,6 +247,7 @@ function move() {
 			player.anims.play('south');
 			player.y +=90;
 			userX+=1;
+			gameWin();
 		}
 	}else if(direction === 3) {
 		if(mazeArray[userX][userY][3] === 0) {
@@ -274,6 +256,7 @@ function move() {
 			player.anims.play('west');
 			player.x -=90;
 			userY-=1;
+			gameWin();
 		}
 	}
 	socket.emit('comAction', '');
@@ -423,6 +406,50 @@ function hitWall() {
 		throw new Error('hit wall and click cancel.');
 	}
 }
+function sendMsg() {
+	if($.trim($('#lobbyChat').val())) {
+		socket.emit('chat', userName, $('#lobbyChat').val());
+		$('#lobbyChat').val('');
+	}
+}
+$('#lobbyChat').bind("enterKey",function(e){
+	sendMsg();
+	$('#lobbyChat').focus();
+});
+$('#lobbyChat').keyup(function(e){
+	if(e.keyCode === 13) {
+		$(this).trigger("enterKey");
+	}
+});
+//使用者加入房間告知後端
+socket.on('connect', function() {
+	socket.emit('join', userName);
+});
+//接收後端訊息
+socket.on('system', function(sysMsg, users) {
+	var msg = '【<span style="color: red">系統</span>】: '+sysMsg+'<br>';
+	$('#msgLog').append(msg);
+});
+//聊天
+socket.on('chat', function(user, userChat) {
+	$('#cardBody').append('<p class="cardText">' + user + ': ' + userChat + '</p><hr>');
+	$('#cardBody').scrollTop($('#cardBody')[0].scrollHeight);
+});
+//房間已滿
+socket.on('roomFull', function() {
+	if(!alert('房間已滿，將退回大廳')) {
+		document.location.href = '/gameRoom/';
+	}
+});
+//對手準備狀態
+socket.on('readyClick', function(data) {
+	if(data === true) {
+		$('#competitorButton').html('準備完成&nbsp;<i class="fa fa-check" aria-hidden="true"></i>');
+	}else if(data === false) {
+		$('#competitorButton').html('準備&nbsp;<i class="fa fa-question" aria-hidden="true"></i>');
+	}
+});
+//對手資訊
 socket.on('comAction', function(compAct) {
 	if(compAct !== '') {
 		if(compAct === "right") {
@@ -454,6 +481,18 @@ socket.on('comAction', function(compAct) {
 			comPlayer.x = 50;
 			comPlayer.y = 50;
 			comPlayer.anims.play('south');
+		}else if(compAct === "gameWin") {
+			game.paused = true;
+			comGame.paused = true;
+			$('#gameButton1').attr("disabled", true);
+			$('#gameButton2').attr("disabled", true);
+			$('#gameButton3').attr("disabled", true);
+			$('#gameButton4').attr("disabled", true);
+			$('#gameButton5').attr("disabled", true);
+			$('#gameButton6').attr("disabled", true);
+			player.setTint(0xff0000);
+			resultText.setText('LOSE');
+			comResultText.setText('WIN');
 		}
 	}else {
 		if(comDirection === 0) {
