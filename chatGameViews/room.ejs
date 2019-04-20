@@ -31,20 +31,20 @@
 						<span class="badge badge-primary">你</span>
 						<div class="card" id="playerGameRegion"></div>
 						<h1 class="card-text text-center" id="timerText1" style="color: red;"></h1>
-						<input class="btn btn-outline-secondary" type="button" value="Forward" onclick="codeBtnAction('forward');" style="display: none;" id="gameButton1">
-						<input class="btn btn-outline-secondary" type="button" value="Turn Right" onclick="codeBtnAction('right');" style="display: none;" id="gameButton2">
-						<input class="btn btn-outline-secondary" type="button" value="Turn Left" onclick="codeBtnAction('left');" style="display: none;" id="gameButton3">
-						<input class="btn btn-outline-secondary" type="button" value="Delete" onclick="codeBtnAction('delete');" style="display: none;" id="gameButton4">
-						<input class="btn btn-outline-secondary" type="button" value="Restart" onclick="reStart();" style="display: none;" id="gameButton5">
+						<div id="actionBox" style="height: 150px; overflow-y : scroll; display: none;">
+							<table class="table table-dark" id="actionTable"></table>
+						</div>
+						<input class="btn btn-outline-warning" type="button" value="Run" onclick="runCode();" style="display: none;" id="gameButton6">
 						<button class="btn btn-primary" onclick="readyBtn();" type="button" id="readyButton">準備&nbsp;<i class="fa fa-question" aria-hidden="true"></i></button>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="card gameRegion">
-						<div id="actionBox" style="height: 150px; overflow-y : scroll; display: none;">
-							<table class="table table-dark" id="actionTable"></table>
-						</div>
-						<input class="btn btn-outline-secondary" type="button" value="Run" onclick="runCode();" style="display: none;" id="gameButton6">
+						<input class="btn btn-outline-secondary" type="button" value="Forward" onclick="codeBtnAction('forward');" style="display: none;" id="gameButton1">
+						<input class="btn btn-outline-secondary" type="button" value="Turn Right" onclick="codeBtnAction('right');" style="display: none;" id="gameButton2">
+						<input class="btn btn-outline-secondary" type="button" value="Turn Left" onclick="codeBtnAction('left');" style="display: none;" id="gameButton3">
+						<input class="btn btn-outline-secondary" type="button" value="Delete" onclick="codeBtnAction('delete');" style="display: none;" id="gameButton4">
+						<input class="btn btn-outline-secondary" type="button" value="Restart" onclick="reStart();" style="display: none;" id="gameButton5">
 						<span class="badge badge-success">對手</span>
 						<div class="card" id="playerGameRegion2"></div>
 						<h1 class="card-text text-center" id="timerText2" style="color: red;"></h1>
